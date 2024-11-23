@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class BuatPenjualanDetailTable extends Migration
+class CreatePenjualanDetailTable extends Migration
 {
     /**
      * Run the migrations.
@@ -24,6 +24,7 @@ class BuatPenjualanDetailTable extends Migration
             // Relasi foreign key ke tabel penjualan
             $table->foreign('nomor_invoice')->references('nomor_invoice')->on('penjualan')->onDelete('cascade');
         });
+
     }
 
     /**

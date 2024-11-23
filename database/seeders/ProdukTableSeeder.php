@@ -17,22 +17,29 @@ class ProdukTableSeeder extends Seeder
 
         DB::table('produk')->insert([
             [
-                'kode_produk' => 'P000001',
-                'nama_produk' => 'Produk A',
-                'harga_jual' => 50000,
+                'kode_produk' => 'PRD001',
                 'id_kategori' => 1, // Sesuaikan dengan ID kategori yang ada
+                'nama_produk' => 'Lampu LED 10W',
+                'harga_jual' => 50000,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'kode_produk' => 'P000002',
-                'nama_produk' => 'Produk B',
+                'kode_produk' => 'PRD002',
+                'id_kategori' => 1, // Sesuaikan dengan ID kategori yang ada
+                'nama_produk' => 'Kabel HDMI 2M',
                 'harga_jual' => 75000,
-                'id_kategori' => 2,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            // Tambahkan data lain sesuai kebutuhan
+            [
+                'kode_produk' => 'PRD003',
+                'id_kategori' => 1, // Sesuaikan dengan ID kategori yang ada
+                'nama_produk' => 'Adaptor Charger 2A',
+                'harga_jual' => 100000,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pembelian;
-use App\Models\Pengeluaran;
 use App\Models\Penjualan;
 use Illuminate\Http\Request;
 use PDF;
@@ -55,7 +54,6 @@ class LaporanController extends Controller
             'tanggal' => '',
             'penjualan' => '',
             'pembelian' => '',
-            'pengeluaran' => 'Total Pendapatan',
             'pendapatan' => format_uang($total_pendapatan),
         ];
 

@@ -10,7 +10,8 @@ class Penjualan extends Model
     use HasFactory;
 
     protected $table = 'penjualan';
-    protected $primaryKey = 'id_penjualan';
+    protected $primaryKey = 'nomor_invoice';
+    public $incrementing = false; // Karena primary key bukan integer
     protected $guarded = [];
 
     public function user()
