@@ -14,6 +14,7 @@ class ProdukTableSeeder extends Seeder
      */
     public function run()
     {
+
         DB::table('produk')->insert([
             [
                 'kode_produk' => 'P000001',

@@ -66,7 +66,6 @@
                         <th>Nama</th>
                         <th>Harga</th>
                         <th width="15%">Jumlah</th>
-                        <th>Diskon</th>
                         <th>Subtotal</th>
                         <th width="15%"><i class="fa fa-cog"></i></th>
                     </thead>
@@ -84,7 +83,7 @@
                             <input type="hidden" name="total" id="total">
                             <input type="hidden" name="total_item" id="total_item">
                             <input type="hidden" name="bayar" id="bayar">
-                            <input type="hidden" name="id_member" id="id_member" value="{{ $memberSelected->id_member }}">
+                            
 
                             <div class="form-group row">
                                 <label for="totalrp" class="col-lg-2 control-label">Total</label>
@@ -92,25 +91,7 @@
                                     <input type="text" id="totalrp" class="form-control" readonly>
                                 </div>
                             </div>
-                            <div class="form-group row">
-                                <label for="kode_member" class="col-lg-2 control-label">Member</label>
-                                <div class="col-lg-8">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="kode_member" value="{{ $memberSelected->kode_member }}">
-                                        <span class="input-group-btn">
-                                            <button onclick="tampilMember()" class="btn btn-info btn-flat" type="button"><i class="fa fa-arrow-right"></i></button>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group row">
-                                <label for="diskon" class="col-lg-2 control-label">Diskon</label>
-                                <div class="col-lg-8">
-                                    <input type="number" name="diskon" id="diskon" class="form-control" 
-                                        value="{{ ! empty($memberSelected->id_member) ? $diskon : 0 }}" 
-                                        readonly>
-                                </div>
-                            </div>
+                            
                             <div class="form-group row">
                                 <label for="bayar" class="col-lg-2 control-label">Bayar</label>
                                 <div class="col-lg-8">
@@ -120,7 +101,7 @@
                             <div class="form-group row">
                                 <label for="diterima" class="col-lg-2 control-label">Diterima</label>
                                 <div class="col-lg-8">
-                                    <input type="number" id="diterima" class="form-control" name="diterima" value="{{ $penjualan->diterima ?? 0 }}">
+                                    <input type="number" id="diterima" class="form-control" name="diterima" min="0" value="{{ $penjualan->diterima ?? 0 }}">
                                 </div>
                             </div>
                             <div class="form-group row">
@@ -142,7 +123,7 @@
 </div>
 
 @includeIf('penjualan_detail.produk')
-@includeIf('penjualan_detail.member')
+<!-- @includeIf('penjualan_detail.member') -->
 @endsection
 
 @push('scripts')
@@ -159,14 +140,16 @@
             autoWidth: false,
             ajax: {
                 url: '{{ route('transaksi.data', $id_penjualan) }}',
-            },
-            columns: [
+                dataSrc: function (json) {
+                    console.log('Respons Data:', json); // Menampilkan respons di console log
+                    return json.data; // Mengembalikan data ke DataTables
+                }
+            },            columns: [
                 {data: 'DT_RowIndex', searchable: false, sortable: false},
                 {data: 'kode_produk'},
                 {data: 'nama_produk'},
                 {data: 'harga_jual'},
                 {data: 'jumlah'},
-                {data: 'diskon'},
                 {data: 'subtotal'},
                 {data: 'aksi', searchable: false, sortable: false},
             ],
@@ -180,11 +163,13 @@
                 $('#diterima').trigger('input');
             }, 300);
         });
+        
         table2 = $('.table-produk').DataTable();
 
         $(document).on('input', '.quantity', function () {
             let id = $(this).data('id');
             let jumlah = parseInt($(this).val());
+            let diterima = parseInt($('#diterima').val());
 
             if (jumlah < 1) {
                 $(this).val(1);
@@ -200,7 +185,8 @@
             $.post(`{{ url('/transaksi') }}/${id}`, {
                     '_token': $('[name=csrf-token]').attr('content'),
                     '_method': 'put',
-                    'jumlah': jumlah
+                    'jumlah': jumlah,
+                    'total_bayar': diterima
                 })
                 .done(response => {
                     $(this).on('mouseout', function () {
@@ -208,9 +194,11 @@
                     });
                 })
                 .fail(errors => {
+                    console.log(response);
                     alert('Tidak dapat menyimpan data');
                     return;
                 });
+                
         });
 
         $(document).on('input', '#diskon', function () {
@@ -226,7 +214,7 @@
                 $(this).val(0).select();
             }
 
-            loadForm($('#diskon').val(), $(this).val());
+        loadForm($('#diskon').val(), $(this).val());
         }).focus(function () {
             $(this).select();
         });
@@ -252,33 +240,23 @@
     }
 
     function tambahProduk() {
-        $.post('{{ route('transaksi.store') }}', $('.form-produk').serialize())
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        $.post('{{ route('transaksi.selectproduk') }}', $('.form-produk').serialize())
             .done(response => {
                 $('#kode_produk').focus();
                 table.ajax.reload(() => loadForm($('#diskon').val()));
+                console.log(response);
             })
             .fail(errors => {
-                alert('Tidak dapat menyimpan data');
+                alert('Data Tidak Ditemukan');
                 return;
             });
-    }
 
-    function tampilMember() {
-        $('#modal-member').modal('show');
-    }
-
-    function pilihMember(id, kode) {
-        $('#id_member').val(id);
-        $('#kode_member').val(kode);
-        $('#diskon').val('{{ $diskon }}');
-        loadForm($('#diskon').val());
-        $('#diterima').val(0).focus().select();
-        hideMember();
-    }
-
-    function hideMember() {
-        $('#modal-member').modal('hide');
-    }
+        }
 
     function deleteData(url) {
         if (confirm('Yakin ingin menghapus data terpilih?')) {

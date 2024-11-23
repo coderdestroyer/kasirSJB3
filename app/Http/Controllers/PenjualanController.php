@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Penjualan;
 use App\Models\PenjualanDetail;
 use App\Models\Produk;
+use App\Models\DetailProduk;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use PDF;
@@ -18,7 +19,18 @@ class PenjualanController extends Controller
 
     public function data()
     {
-        $penjualan = Penjualan::with('member')->orderBy('id_penjualan', 'desc')->get();
+        $penjualan = Penjualan::with('detailPenjualan')
+        ->orderBy('id_penjualan','desc')
+        ->has('detailPenjualan')
+        ->get()
+        ->map(function($penjualan){
+            $penjualan->total_item = $penjualan->detailPenjualan->sum('jumlah');
+            $penjualan->total_harga = $penjualan->detailPenjualan->sum(function ($detail){
+                return $detail->jumlah * $detail->harga_jual_produk;
+            });
+        return $penjualan;
+        });
+        
 
         return datatables()
             ->of($penjualan)
@@ -29,18 +41,8 @@ class PenjualanController extends Controller
             ->addColumn('total_harga', function ($penjualan) {
                 return 'Rp. '. format_uang($penjualan->total_harga);
             })
-            ->addColumn('bayar', function ($penjualan) {
-                return 'Rp. '. format_uang($penjualan->bayar);
-            })
             ->addColumn('tanggal', function ($penjualan) {
                 return tanggal_indonesia($penjualan->created_at, false);
-            })
-            ->addColumn('kode_member', function ($penjualan) {
-                $member = $penjualan->member->kode_member ?? '';
-                return '<span class="label label-success">'. $member .'</spa>';
-            })
-            ->editColumn('diskon', function ($penjualan) {
-                return $penjualan->diskon . '%';
             })
             ->editColumn('kasir', function ($penjualan) {
                 return $penjualan->user->name ?? '';
@@ -53,20 +55,18 @@ class PenjualanController extends Controller
                 </div>
                 ';
             })
-            ->rawColumns(['aksi', 'kode_member'])
+            ->rawColumns(['aksi'])
             ->make(true);
     }
 
     public function create()
     {
+
         $penjualan = new Penjualan();
-        $penjualan->id_member = null;
-        $penjualan->total_item = 0;
-        $penjualan->total_harga = 0;
-        $penjualan->diskon = 0;
-        $penjualan->bayar = 0;
-        $penjualan->diterima = 0;
-        $penjualan->id_user = auth()->id();
+        $penjualan->id_user = auth()->id(); // Kasir yang melakukan transaksi
+        $penjualan->id_kasir = auth()->id();
+        $penjualan->tanggal_penjualan = now(); // Menyimpan waktu transaksi
+        $penjualan->nomor_invoice = 'INV-' . str_pad(Penjualan::max('id_penjualan') + 1, 6, '0', STR_PAD_LEFT); // Membuat nomor invoice
         $penjualan->save();
 
         session(['id_penjualan' => $penjualan->id_penjualan]);
@@ -76,51 +76,44 @@ class PenjualanController extends Controller
     public function store(Request $request)
     {
         $penjualan = Penjualan::findOrFail($request->id_penjualan);
-        $penjualan->id_member = $request->id_member;
-        $penjualan->total_item = $request->total_item;
-        $penjualan->total_harga = $request->total;
-        $penjualan->diskon = $request->diskon;
-        $penjualan->bayar = $request->bayar;
-        $penjualan->diterima = $request->diterima;
         $penjualan->update();
 
         $detail = PenjualanDetail::where('id_penjualan', $penjualan->id_penjualan)->get();
         foreach ($detail as $item) {
-            $item->diskon = $request->diskon;
             $item->update();
-
-            $produk = Produk::find($item->id_produk);
-            $produk->stok -= $item->jumlah;
-            $produk->update();
+            $detailProduk = DetailProduk::where('id_produk', $item->id_produk)->first();
+            $detailProduk->stok_produk -= $item->jumlah;
+            $detailProduk->update();
         }
 
         return redirect()->route('transaksi.selesai');
     }
 
     public function show($id)
-    {
+    {   
+        $penjualan = Penjualan::find($id);
         $detail = PenjualanDetail::with('produk')->where('id_penjualan', $id)->get();
 
-        return datatables()
-            ->of($detail)
-            ->addIndexColumn()
-            ->addColumn('kode_produk', function ($detail) {
-                return '<span class="label label-success">'. $detail->produk->kode_produk .'</span>';
+         return datatables()
+             ->of($detail)
+             ->addIndexColumn()
+             ->addColumn('kode_produk', function ($detail) {
+                 return '<span class="label label-success">'. $detail->produk->kode_produk .'</span>';
+             })
+             ->addColumn('nama_produk', function ($detail) {
+                 return $detail->produk->nama_produk;
+             })
+             ->addColumn('harga_jual', function ($detail) {
+                 return 'Rp. '. format_uang($detail->harga_jual_produk);
+             })
+             ->addColumn('jumlah', function ($detail) {
+                 return format_uang($detail->jumlah);
+             })
+             ->addColumn('subtotal', function ($detail) {
+                return format_uang($detail->jumlah * $detail->harga_jual_produk);
             })
-            ->addColumn('nama_produk', function ($detail) {
-                return $detail->produk->nama_produk;
-            })
-            ->addColumn('harga_jual', function ($detail) {
-                return 'Rp. '. format_uang($detail->harga_jual);
-            })
-            ->addColumn('jumlah', function ($detail) {
-                return format_uang($detail->jumlah);
-            })
-            ->addColumn('subtotal', function ($detail) {
-                return 'Rp. '. format_uang($detail->subtotal);
-            })
-            ->rawColumns(['kode_produk'])
-            ->make(true);
+             ->rawColumns(['kode_produk'])
+             ->make(true);
     }
 
     public function destroy($id)
@@ -128,9 +121,9 @@ class PenjualanController extends Controller
         $penjualan = Penjualan::find($id);
         $detail    = PenjualanDetail::where('id_penjualan', $penjualan->id_penjualan)->get();
         foreach ($detail as $item) {
-            $produk = Produk::find($item->id_produk);
+            $produk = Produk::with('detailProduk')->find($item->id_produk);
             if ($produk) {
-                $produk->stok += $item->jumlah;
+                $produk->detailProduk->stok += $item->jumlah;
                 $produk->update();
             }
 

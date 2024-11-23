@@ -14,6 +14,7 @@ class DetailProdukTableSeeder extends Seeder
      */
     public function run()
     {
+
         // Mengambil id_produk berdasarkan kode_produk atau nama_produk
         $produkA = DB::table('produk')->where('kode_produk', 'P000001')->first();
         $produkB = DB::table('produk')->where('kode_produk', 'P000002')->first();

@@ -18,6 +18,8 @@ class DetailProduk extends Model
         'harga_beli_produk'
     ];
 
+    protected $primaryKey = 'id_detail_produk';
+
     public function produk()
     {
         return $this->belongsTo(Produk::class, 'id_produk', 'id_produk');

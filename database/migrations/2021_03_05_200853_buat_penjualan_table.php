@@ -14,15 +14,17 @@ class BuatPenjualanTable extends Migration
     public function up()
     {
         Schema::create('penjualan', function (Blueprint $table) {
-            $table->increments('id_penjualan');
-            $table->integer('id_member');
-            $table->integer('total_item');
-            $table->integer('total_harga');
-            $table->tinyInteger('diskon')->default(0);
-            $table->integer('bayar')->default(0);
-            $table->integer('diterima')->default(0);
-            $table->integer('id_user');
-            $table->timestamps();
+            $table->string('nomor_invoice')->primary(); // Primary key
+            $table->unsignedBigInteger('id_user'); // Foreign key ke tabel users
+            $table->bigInteger('id_kasir'); // Foreign key ke tabel kasir
+            $table->date('tanggal_penjualan'); // Tanggal penjualan
+            $table->timestamps(); // created_at dan updated_at
+
+            // Relasi foreign key ke tabel users
+            $table->foreign('id_user')->references('id')->on('users')->onDelete('cascade');
+
+            // Relasi foreign key ke tabel kasir
+            $table->foreign('id_kasir')->references('id_kasir')->on('kasir')->onDelete('cascade');
         });
     }
 

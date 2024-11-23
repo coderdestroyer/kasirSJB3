@@ -18,10 +18,8 @@
                     <thead>
                         <th width="5%">No</th>
                         <th>Tanggal</th>
-                        <th>Kode Member</th>
                         <th>Total Item</th>
                         <th>Total Harga</th>
-                        <th>Diskon</th>
                         <th>Total Bayar</th>
                         <th>Kasir</th>
                         <th width="15%"><i class="fa fa-cog"></i></th>
@@ -51,11 +49,9 @@
             columns: [
                 {data: 'DT_RowIndex', searchable: false, sortable: false},
                 {data: 'tanggal'},
-                {data: 'kode_member'},
                 {data: 'total_item'},
                 {data: 'total_harga'},
-                {data: 'diskon'},
-                {data: 'bayar'},
+                {data: 'total_harga'},
                 {data: 'kasir'},
                 {data: 'aksi', searchable: false, sortable: false},
             ]

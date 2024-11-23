@@ -14,13 +14,13 @@ class BuatPembelianTable extends Migration
     public function up()
     {
         Schema::create('pembelian', function (Blueprint $table) {
-            $table->increments('id_pembelian');
-            $table->integer('id_supplier');
-            $table->integer('total_item');
-            $table->integer('total_harga');
-            $table->tinyInteger('diskon')->default(0);
-            $table->integer('bayar')->default(0);
-            $table->timestamps();
+            $table->increments('id_pembelian'); // Primary key
+            $table->date('tanggal_pembelian'); // Kolom untuk tanggal pembelian
+            $table->unsignedInteger('id_supplier'); // Foreign key ke tabel supplier
+            $table->timestamps(); // created_at dan updated_at
+
+            // Relasi foreign key ke tabel supplier
+            $table->foreign('id_supplier')->references('id_supplier')->on('supplier')->onDelete('cascade');
         });
     }
 

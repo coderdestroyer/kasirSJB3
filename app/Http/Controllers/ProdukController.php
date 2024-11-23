@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Produk;
 use Illuminate\Contracts\Support\ValidatedData;
 use PDF;
+use Picqer\Barcode\BarcodeGeneratorPNG;
 
 class ProdukController extends Controller
 {
@@ -87,7 +88,7 @@ class ProdukController extends Controller
      */
     public function store(Request $request)
     {
-        @dd($request->all());
+        // @dd($request->all());
         $validatedData = $request->validate([
             'nama_produk' => 'required',
             'harga_jual' => 'required|numeric',
@@ -98,7 +99,7 @@ class ProdukController extends Controller
         ]);
     
         // Memanggil stored procedure 'store_produk' menggunakan DB::select
-        @dd($validatedData);
+        // @dd($validatedData);
         DB::statement('CALL store_produk(?, ?, ?, ?, ?, ?)', [
             $validatedData['nama_produk'],
             $validatedData['harga_jual'],
@@ -125,8 +126,14 @@ class ProdukController extends Controller
      */
     public function show($id)
     {
-        $produk = Produk::find($id);
-
+        $produk = Produk::where('id_produk', $id)->first();
+        $detailproduk = DetailProduk::where('id_produk', $id)->first();
+    
+        // Gabungkan atribut detail produk ke dalam objek produk
+        foreach ($detailproduk->getAttributes() as $key => $value) {
+            $produk->setAttribute($key, $value);
+        }
+    
         return response()->json($produk);
     }
 
@@ -136,9 +143,23 @@ class ProdukController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function update(Request $request, $id)
     {
-        //
+        $produk = Produk::where('id_produk', $id)->first();
+        if (!$produk) {
+            return response()->json(['message' => 'Produk not found'], 404);
+        }
+
+        $detailProduk = DetailProduk::where('id_produk', $id)->first();
+        if (!$detailProduk) {
+            return response()->json(['message' => 'Detail Produk not found'], 404);
+        }
+
+        $produk->update($request->only(['nama_produk', 'harga_jual', 'id_kategori']));
+
+        $detailProduk->update($request->only(['stok_produk', 'merk', 'harga_beli_produk']));
+
+        return response()->json('Data berhasil disimpan', 200);
     }
 
     /**
@@ -148,13 +169,6 @@ class ProdukController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
-    {
-        $produk = Produk::find($id);
-        $produk->update($request->all());
-
-        return response()->json('Data berhasil disimpan', 200);
-    }
 
     /**
      * Remove the specified resource from storage.
@@ -164,7 +178,7 @@ class ProdukController extends Controller
      */
     public function destroy($id)
     {
-        $produk = Produk::find($id);
+        $produk = Produk::where('id_produk', $id)->first();
         $produk->delete();
 
         return response(null, 204);
@@ -173,7 +187,7 @@ class ProdukController extends Controller
     public function deleteSelected(Request $request)
     {
         foreach ($request->id_produk as $id) {
-            $produk = Produk::find($id);
+            $produk = Produk::where('id_produk', $id)->first();
             $produk->delete();
         }
 
@@ -184,7 +198,7 @@ class ProdukController extends Controller
     {
         $dataproduk = array();
         foreach ($request->id_produk as $id) {
-            $produk = Produk::find($id);
+            $produk = Produk::where('id_produk', $id)->first();
             $dataproduk[] = $produk;
         }
 
@@ -192,5 +206,12 @@ class ProdukController extends Controller
         $pdf = PDF::loadView('produk.barcode', compact('dataproduk', 'no'));
         $pdf->setPaper('a4', 'potrait');
         return $pdf->stream('produk.pdf');
+
+        // $generator = new BarcodeGeneratorPNG();
+
+        // $pdf = PDF::loadView('produk.barcode', compact('dataproduk', 'generator'));
+        // $pdf->setPaper('a4', 'portrait');
+        // return $pdf->stream('produk.pdf');
+        
     }
 }

@@ -14,14 +14,15 @@ class BuatPenjualanDetailTable extends Migration
     public function up()
     {
         Schema::create('penjualan_detail', function (Blueprint $table) {
-            $table->increments('id_penjualan_detail');
-            $table->integer('id_penjualan');
-            $table->integer('id_produk');
-            $table->integer('harga_jual');
-            $table->integer('jumlah');
-            $table->tinyInteger('diskon')->default(0);
-            $table->integer('subtotal');
-            $table->timestamps();
+            $table->increments('id_penjualan_detail'); // Primary key
+            $table->string('nomor_invoice'); // Foreign key ke nomor_invoice di tabel penjualan
+            $table->string('nama_produk'); // Nama produk
+            $table->integer('harga_jual'); // Harga jual produk
+            $table->integer('jumlah'); // Jumlah produk
+            $table->timestamps(); // created_at dan updated_at
+
+            // Relasi foreign key ke tabel penjualan
+            $table->foreign('nomor_invoice')->references('nomor_invoice')->on('penjualan')->onDelete('cascade');
         });
     }
 

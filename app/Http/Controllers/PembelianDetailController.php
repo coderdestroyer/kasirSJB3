@@ -13,7 +13,7 @@ class PembelianDetailController extends Controller
     public function index()
     {
         $id_pembelian = session('id_pembelian');
-        $produk = Produk::orderBy('nama_produk')->get();
+        $produk = Produk::with('detailProduk')->orderBy('nama_produk')->get();
         $supplier = Supplier::find(session('id_supplier'));
         $diskon = Pembelian::find($id_pembelian)->diskon ?? 0;
 
@@ -29,6 +29,7 @@ class PembelianDetailController extends Controller
         $detail = PembelianDetail::with('produk')
             ->where('id_pembelian', $id)
             ->get();
+            
         $data = array();
         $total = 0;
         $total_item = 0;
@@ -37,15 +38,15 @@ class PembelianDetailController extends Controller
             $row = array();
             $row['kode_produk'] = '<span class="label label-success">'. $item->produk['kode_produk'] .'</span';
             $row['nama_produk'] = $item->produk['nama_produk'];
-            $row['harga_beli']  = 'Rp. '. format_uang($item->harga_beli);
+            $row['harga_beli']  = 'Rp. '. format_uang($item->harga_beli_produk);
             $row['jumlah']      = '<input type="number" class="form-control input-sm quantity" data-id="'. $item->id_pembelian_detail .'" value="'. $item->jumlah .'">';
-            $row['subtotal']    = 'Rp. '. format_uang($item->subtotal);
+            $row['subtotal']    = 'Rp. '. format_uang($item->harga_beli_produk * $item->jumlah);
             $row['aksi']        = '<div class="btn-group">
                                     <button onclick="deleteData(`'. route('pembelian_detail.destroy', $item->id_pembelian_detail) .'`)" class="btn btn-xs btn-danger btn-flat"><i class="fa fa-trash"></i></button>
                                 </div>';
             $data[] = $row;
 
-            $total += $item->harga_beli * $item->jumlah;
+            $total += $item->harga_beli_produk * $item->jumlah;
             $total_item += $item->jumlah;
         }
         $data[] = [
@@ -74,11 +75,11 @@ class PembelianDetailController extends Controller
         }
 
         $detail = new PembelianDetail();
+        $detail->timestamps = false;
         $detail->id_pembelian = $request->id_pembelian;
         $detail->id_produk = $produk->id_produk;
-        $detail->harga_beli = $produk->harga_beli;
+        $detail->harga_beli_produk = $produk->detailProduk->harga_beli_produk;
         $detail->jumlah = 1;
-        $detail->subtotal = $produk->harga_beli;
         $detail->save();
 
         return response()->json('Data berhasil disimpan', 200);
@@ -88,7 +89,6 @@ class PembelianDetailController extends Controller
     {
         $detail = PembelianDetail::find($id);
         $detail->jumlah = $request->jumlah;
-        $detail->subtotal = $detail->harga_beli * $request->jumlah;
         $detail->update();
     }
 
@@ -100,9 +100,9 @@ class PembelianDetailController extends Controller
         return response(null, 204);
     }
 
-    public function loadForm($diskon, $total)
+    public function loadForm($total)
     {
-        $bayar = $total - ($diskon / 100 * $total);
+        $bayar = $total;
         $data  = [
             'totalrp' => format_uang($total),
             'bayar' => $bayar,

@@ -7,6 +7,7 @@ use App\Models\Pembelian;
 use App\Models\PembelianDetail;
 use App\Models\Produk;
 use App\Models\Supplier;
+use Illuminate\Support\Facades\DB;
 
 class PembelianController extends Controller
 {
@@ -19,7 +20,8 @@ class PembelianController extends Controller
 
     public function data()
     {
-        $pembelian = Pembelian::orderBy('id_pembelian', 'desc')->get();
+        $pembelian = Pembelian::has('detilPembelian')->whereNotNull('updated_at')->orderBy('id_pembelian', 'desc')->get();
+        $detilpembelian = PembelianDetail::orderBy('id_pembelian', 'desc')->get();
 
         return datatables()
             ->of($pembelian)
@@ -31,7 +33,13 @@ class PembelianController extends Controller
                 return $pembelian->supplier->nama;
             })
             ->addColumn('status', function ($pembelian) {
-                return $pembelian->status;
+                $belumLunas = $pembelian->detilPembelian->contains('status', 'belum lunas'); 
+                if ($belumLunas) {
+                    return 'Belum Lunas';
+                } else {
+                    return 'Lunas'; 
+                }
+    
             })
             ->addColumn('aksi', function ($pembelian) {
                 return '
@@ -42,14 +50,14 @@ class PembelianController extends Controller
                 ';
             })
             ->rawColumns(['aksi'])
-            ->make(true);
+            ->make(true);   
     }
 
     public function create($id)
     {
         $pembelian = new Pembelian();
         $pembelian->id_supplier = $id;
-        $pembelian->tanggal_pembelian = now(); // Sesuaikan dengan data tanggal jika diperlukan
+        $pembelian->tanggal_pembelian = now();
         $pembelian->save();
 
         session(['id_pembelian' => $pembelian->id_pembelian]);
@@ -61,14 +69,14 @@ class PembelianController extends Controller
     public function store(Request $request)
     {
         $pembelian = Pembelian::findOrFail($request->id_pembelian);
-        $pembelian->tanggal_pembelian = $request->tanggal_pembelian; // Pastikan field ini ada di form
         $pembelian->update();
 
         $detail = PembelianDetail::where('id_pembelian', $pembelian->id_pembelian)->get();
         foreach ($detail as $item) {
-            $produk = Produk::find($item->id_produk);
-            $produk->stok += $item->jumlah;
+            $produk = Produk::with('detailProduk')->find($item->id_produk);
+            $produk->detailProduk->stok += $item->jumlah;
             $produk->update();
+            $item->touch();
     }
 
         return redirect()->route('pembelian.index');
@@ -76,8 +84,14 @@ class PembelianController extends Controller
 
     public function show($id)
     {
-        $detail = PembelianDetail::with('produk')->where('id_pembelian', $id)->get();
-
+        $detail = PembelianDetail::with('produk')
+            ->selectRaw("
+                pembelian_detail.*, 
+                hitung_harga_beli_produk(id_pembelian_detail) as subtotal
+            ")
+            ->where('id_pembelian', $id)
+            ->get();
+    
         return datatables()
             ->of($detail)
             ->addIndexColumn()
@@ -88,10 +102,13 @@ class PembelianController extends Controller
                 return $detail->produk->nama_produk;
             })
             ->addColumn('harga_beli', function ($detail) {
-                return 'Rp. '. format_uang($detail->harga_beli);
+                return 'Rp. '. format_uang($detail->harga_beli_produk);
             })
             ->addColumn('jumlah', function ($detail) {
                 return format_uang($detail->jumlah);
+            })
+            ->addColumn('status', function ($detail) {
+                return $detail->status;
             })
             ->addColumn('subtotal', function ($detail) {
                 return 'Rp. '. format_uang($detail->subtotal);
@@ -105,9 +122,9 @@ class PembelianController extends Controller
         $pembelian = Pembelian::find($id);
         $detail    = PembelianDetail::where('id_pembelian', $pembelian->id_pembelian)->get();
         foreach ($detail as $item) {
-            $produk = Produk::find($item->id_produk);
+            $produk = Produk::with('detailProduk')->find($item->id_produk);
             if ($produk) {
-                $produk->stok -= $item->jumlah;
+                $produk->detailProduk->stok -= $item->jumlah;
                 $produk->update();
             }
             $item->delete();

@@ -14,15 +14,18 @@ class BuatProdukTable extends Migration
     public function up()
     {
         Schema::create('produk', function (Blueprint $table) {
-            $table->increments('id_produk');
+            $table->string('kode_produk', 20)->primary(); // Kode produk sebagai primary key
             $table->unsignedInteger('id_kategori');
             $table->string('nama_produk')->unique();
-            $table->string('merk')->nullable();
-            $table->integer('harga_beli');
-            $table->tinyInteger('diskon')->default(0);
             $table->integer('harga_jual');
-            $table->integer('stok');
             $table->timestamps();
+
+            // Foreign key ke tabel kategori
+            $table->foreign('id_kategori')
+                  ->references('id_kategori')
+                  ->on('kategori')
+                  ->onUpdate('cascade')  // Jika id_kategori berubah, update di tabel produk
+                  ->onDelete('restrict'); // Jika ada data produk terkait, tidak bisa menghapus kategori
         });
     }
 

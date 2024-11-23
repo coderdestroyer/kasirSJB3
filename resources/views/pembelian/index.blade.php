@@ -71,6 +71,7 @@
                 {data: 'nama_produk'},
                 {data: 'harga_beli'},
                 {data: 'jumlah'},
+                {data: 'status'},
                 {data: 'subtotal'},
             ]
         })

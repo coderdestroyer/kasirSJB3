@@ -68,7 +68,7 @@
                 {data: 'nama_produk'},
                 {data: 'nama_kategori'},
                 {data: 'merk'},
-                {data: 'harga_beli'},
+                {data: 'harga_beli_produk'},
                 {data: 'harga_jual'},
                 {data: 'stok'},
                 {data: 'aksi', searchable: false, sortable: false},
@@ -83,9 +83,13 @@
                             table.ajax.reload();
                         })
                         .fail((errors) => {
-                            alert('Tidak dapat menyimpan data');
-                            return;
-                        });
+                        // Display specific server error message, if available
+                        if (errors.responseJSON && errors.responseJSON.message) {
+                            alert(errors.responseJSON.message);
+                        } else {
+                            alert('An error occurred. Please try again.');
+                        }
+                    });
                 }
             });
 
@@ -111,20 +115,21 @@
         $('#modal-form form')[0].reset();
         $('#modal-form form').attr('action', url);
         $('#modal-form [name=_method]').val('put');
-        $('#modal-form [name=nama_produk]').focus();
 
         $.get(url)
             .done((response) => {
+                console.log(response);  
+
                 $('#modal-form [name=nama_produk]').val(response.nama_produk);
                 $('#modal-form [name=id_kategori]').val(response.id_kategori);
                 $('#modal-form [name=merk]').val(response.merk);
-                $('#modal-form [name=harga_beli]').val(response.harga_beli);
+                $('#modal-form [name=harga_beli_produk]').val(response.harga_beli_produk);
                 $('#modal-form [name=harga_jual]').val(response.harga_jual);
-                $('#modal-form [name=diskon]').val(response.diskon);
-                $('#modal-form [name=stok]').val(response.stok);
+                $('#modal-form [name=stok_produk]').val(response.stok_produk);
             })
             .fail((errors) => {
                 alert('Tidak dapat menampilkan data');
+                console.error(errors);  
                 return;
             });
     }

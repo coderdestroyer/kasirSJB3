@@ -14,6 +14,7 @@ class UserTableSeeder extends Seeder
      */
     public function run()
     {
+        
         $users = array(
             [
                 'name' => 'Administrator',
