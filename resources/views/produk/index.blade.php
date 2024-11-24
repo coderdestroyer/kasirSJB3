@@ -68,7 +68,7 @@
                 {data: 'nama_produk'},
                 {data: 'nama_kategori'},
                 {data: 'merk'},
-                {data: 'harga_beli_produk'},
+                {data: 'harga_beli'},
                 {data: 'harga_jual'},
                 {data: 'stok'},
                 {data: 'aksi', searchable: false, sortable: false},
