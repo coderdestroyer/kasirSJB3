@@ -17,7 +17,7 @@ class Produk extends Model
         'id_kategori'
     ];
 
-    protected $primaryKey = 'id_produk';
+    protected $primaryKey = 'kode_produk';
 
     public function detailProduk()
     {
