@@ -97,4 +97,12 @@ Route::group(['middleware' => 'auth'], function () {
         Route::get('/profil', [UserController::class, 'profil'])->name('user.profil');
         Route::post('/profil', [UserController::class, 'updateProfil'])->name('user.update_profil');
     });
+
+    Route::prefix('produk')->name('produk.')->group(function() {
+        // Rute untuk menampilkan daftar produk (halaman utama produk)
+        Route::get('/', [ProdukController::class, 'index'])->name('index');
+        
+        // Rute untuk mengambil data produk dengan DataTables
+        Route::get('data', [ProdukController::class, 'data'])->name('data');
+    });
 });
