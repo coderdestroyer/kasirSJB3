@@ -52,13 +52,13 @@ public function data()
             return '<span class="label label-success">'. $produk->kode_produk .'</span>';
         })
         ->addColumn('harga_beli', function ($produk) {
-            return format_uang($produk->harga_beli_produk);
+            return format_uang($produk->harga_beli);
         })
         ->addColumn('harga_jual', function ($produk) {
             return format_uang($produk->harga_jual);
         })
         ->addColumn('stok', function ($produk) {
-            return format_uang($produk->stok_produk);
+            return format_uang($produk->stok);
         })
         ->addColumn('aksi', function ($produk) {
             return '
@@ -82,9 +82,9 @@ public function data()
             'nama_produk' => 'required|string',
             'harga_jual' => 'required|numeric',
             'id_kategori' => 'required|exists:kategori,id_kategori',
-            'stok_produk' => 'required|numeric',
+            'stok' => 'required|numeric',
             'merk' => 'nullable|string',
-            'harga_beli_produk' => 'required|numeric',
+            'harga_beli' => 'required|numeric',
         ]);
 
         DB::transaction(function () use ($validatedData) {
@@ -97,9 +97,9 @@ public function data()
 
             ProdukDetail::create([
                 'kode_produk' => $produk->kode_produk,
-                'stok' => $validatedData['stok_produk'],
+                'stok' => $validatedData['stok'],
                 'merk' => $validatedData['merk'],
-                'harga_beli' => $validatedData['harga_beli_produk'],
+                'harga_beli' => $validatedData['harga_beli'],
             ]);
         });
 
@@ -138,9 +138,9 @@ public function data()
             'nama_produk' => 'required|string',
             'harga_jual' => 'required|numeric',
             'id_kategori' => 'required|exists:kategori,id_kategori',
-            'stok_produk' => 'required|numeric',
+            'stok' => 'required|numeric',
             'merk' => 'nullable|string',
-            'harga_beli_produk' => 'required|numeric',
+            'harga_beli' => 'required|numeric',
         ]);
 
         $produk = Produk::findOrFail($id);
@@ -154,9 +154,9 @@ public function data()
             ]);
 
             $produkDetail->update([
-                'stok' => $validatedData['stok_produk'],
+                'stok' => $validatedData['stok'],
                 'merk' => $validatedData['merk'],
-                'harga_beli' => $validatedData['harga_beli_produk'],
+                'harga_beli' => $validatedData['harga_beli'],
             ]);
         });
 
